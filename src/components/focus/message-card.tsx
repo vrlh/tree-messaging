@@ -194,6 +194,14 @@ export function MessageCard({
             >
               Tree
             </a>
+            <a
+              href={`/conversation/${conversationId}?node=${id}&mode=forum`}
+              className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
+                         text-gray-600 hover:bg-gray-200 focus:outline-none
+                         focus:ring-2 focus:ring-gray-400/30"
+            >
+              Forum
+            </a>
           </div>
         )}
       </div>
@@ -250,7 +258,7 @@ export function MessageCard({
           {/* Node label + Sibling navigation — bottom right */}
           <div className="flex items-center gap-2">
           {nodeLabel && (
-            <span className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-600">
+            <span className="rounded bg-gray-100 px-0.5 font-mono text-[9px] leading-tight text-gray-400">
               {nodeLabel}
             </span>
           )}

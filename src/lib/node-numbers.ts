@@ -40,19 +40,19 @@ export function buildNodeLabelMaps(messages: DbMessage[]): NodeLabelMaps {
 
     const children = childrenOf.get(msgId) ?? [];
     children.forEach((child, i) => {
-      assign(child.id, `${label}-${i + 1}`);
+      assign(child.id, `${label}.${i + 1}`);
     });
   }
 
   roots.forEach((root, i) => {
-    assign(root.id, `T${i + 1}`);
+    assign(root.id, `${i + 1}`);
   });
 
   return { idToLabel, labelToId };
 }
 
-/** Regex matching @-references like @T1, @T1-2, @T1-2-3 */
-export const NODE_REF_REGEX = /(@T\d+(?:-\d+)*)/g;
+/** Regex matching @-references like @1, @1.2, @1.2.3 */
+export const NODE_REF_REGEX = /(@\d+(?:\.\d+)*)/g;
 
 /** Split body text into segments of plain text and node references */
 export function parseNodeReferences(

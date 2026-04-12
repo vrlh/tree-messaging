@@ -205,6 +205,9 @@ export function BranchView({
                       conversationId={conversationId}
                       parentId={msg.id}
                       mode="reply"
+                      labelToId={labelToId}
+                      messagesById={messagesById}
+                      profileMap={profileMap}
                       onClose={() => setComposerState(null)}
                       onSent={handleComposerSent}
                     />
@@ -220,6 +223,9 @@ export function BranchView({
                       conversationId={conversationId}
                       parentId={msg.parent_id}
                       mode="sibling"
+                      labelToId={labelToId}
+                      messagesById={messagesById}
+                      profileMap={profileMap}
                       onClose={() => setComposerState(null)}
                       onSent={handleComposerSent}
                     />

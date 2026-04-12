@@ -55,6 +55,14 @@ export function RootCard({
             >
               Tree
             </Link>
+            <Link
+              href={`/conversation/${conversationId}?node=${topic.message.id}&mode=forum`}
+              className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
+                         text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2
+                         focus:ring-gray-400/30"
+            >
+              Forum
+            </Link>
           </div>
         </div>
 
@@ -131,6 +139,13 @@ export function RootCard({
                                    text-gray-600 hover:bg-gray-200"
                       >
                         Tree
+                      </Link>
+                      <Link
+                        href={`/conversation/${conversationId}?node=${child.id}&mode=forum`}
+                        className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium
+                                   text-gray-600 hover:bg-gray-200"
+                      >
+                        Forum
                       </Link>
                     </div>
                   </div>

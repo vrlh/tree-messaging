@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { MessageNode, DbMessage } from "@/lib/types";
 import { updateMessage, createMessage } from "@/actions/messages";
 import { MessageBody } from "@/components/message-body";
+import { HighlightTextarea } from "@/components/highlight-textarea";
 import Link from "next/link";
 
 interface TreeNodeProps {
@@ -104,10 +105,10 @@ export function TreeNode({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex w-full flex-col">
       {/* The node card */}
       <div
-        className="rounded-lg border border-gray-200 bg-white p-3"
+        className="rounded-lg border border-gray-200 bg-white p-3 overflow-visible"
       >
         {editing ? (
           <div className="space-y-2">
@@ -227,7 +228,7 @@ export function TreeNode({
               )}
               </div>
               {nodeLabel && (
-                <span className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-600">
+                <span className="rounded bg-gray-100 px-0.5 font-mono text-[9px] leading-tight text-gray-400">
                   {nodeLabel}
                 </span>
               )}
@@ -241,15 +242,15 @@ export function TreeNode({
             <p className="mb-1 text-xs font-medium text-blue-700">
               {composerMode === "reply" ? "Reply" : "Add alternative"}
             </p>
-            <textarea
+            <HighlightTextarea
               value={composerBody}
               onChange={(e) => setComposerBody(e.target.value)}
               rows={2}
               autoFocus
               placeholder={composerMode === "reply" ? "Write a reply..." : "Write an alternative..."}
-              className="w-full resize-none rounded-md border border-gray-200 bg-white px-2 py-1.5
-                         text-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none
-                         focus:ring-2 focus:ring-blue-500/20"
+              labelToId={labelToId}
+              messagesById={messagesById}
+              profiles={profileMap}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault();
@@ -283,32 +284,58 @@ export function TreeNode({
         )}
       </div>
 
-      {/* Children laid out side by side */}
+      {/* Children */}
       {node.children.length > 0 && (
-        <div className="mt-1 flex items-start gap-2 pl-4">
+        <>
           {/* Vertical connector from parent */}
-          <div className="flex flex-col items-center">
-            <div className="h-2 w-px bg-gray-300" />
+          <div className="flex justify-center">
+            <div className="h-4 w-0.5 bg-gray-400" />
           </div>
-          {/* Horizontal layout of children */}
-          <div className="flex flex-1 gap-3 overflow-x-auto pb-2">
-            {node.children.map((child) => (
-              <div key={child.id} className="min-w-[250px] max-w-[400px] flex-1">
-                <TreeNode
-                  node={child}
-                  conversationId={conversationId}
-                  currentUserId={currentUserId}
-                  idToLabel={idToLabel}
-                  labelToId={labelToId}
-                  messagesById={messagesById}
-                  profileMap={profileMap}
-                  onMessageAdded={onMessageAdded}
-                  onMessageUpdated={onMessageUpdated}
-                />
+          {/* Single child: just render it directly, no horizontal scroll needed */}
+          {node.children.length === 1 ? (
+            <TreeNode
+              node={node.children[0]}
+              conversationId={conversationId}
+              currentUserId={currentUserId}
+              idToLabel={idToLabel}
+              labelToId={labelToId}
+              messagesById={messagesById}
+              profileMap={profileMap}
+              onMessageAdded={onMessageAdded}
+              onMessageUpdated={onMessageUpdated}
+            />
+          ) : (
+            /* Multiple children: each child gets a constrained column that scrolls independently */
+            <div className="overflow-x-auto pb-2">
+              <div className="flex gap-4" style={{ minWidth: node.children.length * 280 }}>
+                {node.children.map((child, i) => (
+                  <div key={child.id} className="min-w-[260px] flex-1 overflow-hidden">
+                    {/* Connector: horizontal bar segment + vertical drop */}
+                    <div className="flex h-1 items-center">
+                      <div className={`h-0.5 flex-1 ${i === 0 ? "bg-transparent" : "bg-gray-400"}`} />
+                      <div className="h-0.5 w-0.5 bg-gray-400" />
+                      <div className={`h-0.5 flex-1 ${i === node.children.length - 1 ? "bg-transparent" : "bg-gray-400"}`} />
+                    </div>
+                    <div className="flex justify-center">
+                      <div className="h-3 w-0.5 bg-gray-400" />
+                    </div>
+                    <TreeNode
+                      node={child}
+                      conversationId={conversationId}
+                      currentUserId={currentUserId}
+                      idToLabel={idToLabel}
+                      labelToId={labelToId}
+                      messagesById={messagesById}
+                      profileMap={profileMap}
+                      onMessageAdded={onMessageAdded}
+                      onMessageUpdated={onMessageUpdated}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

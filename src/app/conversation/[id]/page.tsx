@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BranchView } from "@/components/focus/branch-view";
 import { TreeView } from "@/components/tree/tree-view";
+import { ForumView } from "@/components/forum/forum-view";
 import { APP_NAME } from "@/lib/constants";
 import type { DbMessage } from "@/lib/types";
 
@@ -15,7 +16,7 @@ export default async function ConversationPage({
   const { id: conversationId } = await params;
   const { node: nodeId, mode } = await searchParams;
 
-  const viewMode = mode === "tree" ? "tree" : "focus";
+  const viewMode = mode === "tree" ? "tree" : mode === "forum" ? "forum" : "focus";
 
   const supabase = await createClient();
 
@@ -70,13 +71,19 @@ export default async function ConversationPage({
     profiles[p.id] = { email: p.email, display_name: p.display_name };
   }
 
-  const otherMode = viewMode === "focus" ? "tree" : "focus";
-  const modeToggleHref = `/conversation/${conversationId}?${
-    focusNodeId ? `node=${focusNodeId}&` : ""
-  }mode=${otherMode}`;
+  const nodeParam = focusNodeId ? `node=${focusNodeId}&` : "";
+  const modeLinks = {
+    focus: `/conversation/${conversationId}?${nodeParam}mode=focus`,
+    tree: `/conversation/${conversationId}?${nodeParam}mode=tree`,
+    forum: `/conversation/${conversationId}?${nodeParam}mode=forum`,
+  };
+
+  const containerClass = viewMode === "tree"
+    ? "max-w-full overflow-x-hidden"
+    : "max-w-3xl";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className={`mx-auto px-4 py-8 ${containerClass}`}>
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <a
@@ -92,20 +99,26 @@ export default async function ConversationPage({
               {conversation?.title ?? APP_NAME}
             </h1>
             <p className="text-xs text-gray-500">
-              {viewMode === "focus" ? "Focus mode" : "Tree mode"}
+              {viewMode === "focus" ? "Focus mode" : viewMode === "tree" ? "Tree mode" : "Forum mode"}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <a
-            href={modeToggleHref}
-            className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
-                       text-gray-600 hover:bg-gray-200 focus:outline-none
-                       focus:ring-2 focus:ring-gray-400/30"
-          >
-            {viewMode === "focus" ? "Tree view" : "Focus view"}
-          </a>
-          <span className="text-xs text-gray-500">{user.email}</span>
+        <div className="flex items-center gap-2">
+          {(["focus", "tree", "forum"] as const).map((m) => (
+            <a
+              key={m}
+              href={modeLinks[m]}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium focus:outline-none
+                         focus:ring-2 focus:ring-gray-400/30 ${
+                viewMode === m
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {m.charAt(0).toUpperCase() + m.slice(1)}
+            </a>
+          ))}
+          <span className="ml-1 text-xs text-gray-500">{user.email}</span>
         </div>
       </header>
 
@@ -117,8 +130,16 @@ export default async function ConversationPage({
           currentUserId={user.id}
           profiles={profiles}
         />
-      ) : (
+      ) : viewMode === "tree" ? (
         <TreeView
+          conversationId={conversationId}
+          initialMessages={messages}
+          currentUserId={user.id}
+          rootNodeId={focusNodeId}
+          profiles={profiles}
+        />
+      ) : (
+        <ForumView
           conversationId={conversationId}
           initialMessages={messages}
           currentUserId={user.id}

@@ -3,11 +3,15 @@
 import { useState } from "react";
 import { createMessage } from "@/actions/messages";
 import type { DbMessage } from "@/lib/types";
+import { HighlightTextarea } from "@/components/highlight-textarea";
 
 interface ComposerProps {
   conversationId: string;
   parentId: string | null;
   mode: "reply" | "sibling";
+  labelToId?: Map<string, string>;
+  messagesById?: Map<string, DbMessage>;
+  profileMap?: Map<string, { email: string; display_name: string | null }>;
   onClose: () => void;
   onSent: (message: DbMessage) => void;
 }
@@ -16,6 +20,9 @@ export function Composer({
   conversationId,
   parentId,
   mode,
+  labelToId,
+  messagesById,
+  profileMap,
   onClose,
   onSent,
 }: ComposerProps) {
@@ -54,7 +61,7 @@ export function Composer({
       className="rounded-lg border border-blue-200 bg-blue-50/30 p-3"
     >
       <p className="mb-2 text-xs font-medium text-blue-700">{label}</p>
-      <textarea
+      <HighlightTextarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder={
@@ -62,9 +69,9 @@ export function Composer({
         }
         rows={3}
         autoFocus
-        className="w-full resize-none rounded-md border border-gray-200 bg-white px-3 py-2
-                   text-sm placeholder:text-gray-400 focus:border-blue-500
-                   focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        labelToId={labelToId}
+        messagesById={messagesById}
+        profiles={profileMap}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
