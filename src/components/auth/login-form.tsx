@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ALLOWED_EMAILS } from "@/lib/constants";
 
 export function LoginForm({ errorParam }: { errorParam?: string }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
-    "idle"
-  );
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(errorParam ?? "");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -22,20 +24,39 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
       return;
     }
 
-    setStatus("sending");
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithOtp({
+
+    if (mode === "signup") {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: trimmed,
+        password,
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: trimmed,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      password,
     });
 
-    if (authError) {
-      setError(authError.message);
-      setStatus("error");
+    setLoading(false);
+
+    if (signInError) {
+      setError(signInError.message);
     } else {
-      setStatus("sent");
+      router.push("/");
+      router.refresh();
     }
   }
 
@@ -48,54 +69,80 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
 
   return (
     <div className="w-full max-w-sm">
-      {status === "sent" ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-          <h2 className="mb-2 text-lg font-medium text-green-900">
-            Check your email
-          </h2>
-          <p className="text-sm text-green-700">
-            We sent a magic link to <strong>{email}</strong>. Click it to sign
-            in.
-          </p>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
-            >
-              Email address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              autoFocus
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                         placeholder:text-gray-400 focus:border-blue-500
-                         focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-          </div>
-
-          {errorMessage && (
-            <p className="text-sm text-red-600">{errorMessage}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={status === "sending"}
-            className="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium
-                       text-white hover:bg-gray-800 focus:outline-none focus:ring-2
-                       focus:ring-gray-900/20 disabled:opacity-50"
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
           >
-            {status === "sending" ? "Sending..." : "Send magic link"}
-          </button>
-        </form>
-      )}
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            autoFocus
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       placeholder:text-gray-400 focus:border-blue-500
+                       focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="password"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 6 characters"
+            required
+            minLength={6}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                       placeholder:text-gray-400 focus:border-blue-500
+                       focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
+
+        {errorMessage && (
+          <p className="text-sm text-red-600">{errorMessage}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium
+                     text-white hover:bg-gray-800 focus:outline-none focus:ring-2
+                     focus:ring-gray-900/20 disabled:opacity-50"
+        >
+          {loading
+            ? "Please wait..."
+            : mode === "signup"
+              ? "Create account & sign in"
+              : "Sign in"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setError("");
+          }}
+          className="w-full text-center text-sm text-gray-500 hover:text-gray-700"
+        >
+          {mode === "signin"
+            ? "First time? Create an account"
+            : "Already have an account? Sign in"}
+        </button>
+      </form>
     </div>
   );
 }
