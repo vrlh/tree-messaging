@@ -107,18 +107,11 @@ create policy "conversations_select_member"
     )
   );
 
--- Conversation members: authenticated users can see memberships they belong to
+-- Conversation members: users can see their own memberships
 create policy "conversation_members_select"
   on conversation_members for select
   to authenticated
-  using (
-    user_id = auth.uid()
-    or exists (
-      select 1 from conversation_members cm
-      where cm.conversation_id = conversation_members.conversation_id
-        and cm.user_id = auth.uid()
-    )
-  );
+  using (user_id = auth.uid());
 
 -- Messages: members of the conversation can read messages
 create policy "messages_select_member"
