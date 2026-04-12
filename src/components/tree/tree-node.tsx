@@ -37,7 +37,7 @@ export function TreeNode({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [composerMode, setComposerMode] = useState<
-    "reply" | "sibling" | null
+    "reply" | null
   >(null);
   const [composerBody, setComposerBody] = useState("");
   const [composerSending, setComposerSending] = useState(false);
@@ -85,8 +85,7 @@ export function TreeNode({
     setComposerSending(true);
     setComposerError("");
 
-    const parentId =
-      composerMode === "reply" ? node.id : node.parent_id;
+    const parentId = node.id;
 
     const result = await createMessage({
       conversation_id: conversationId,
@@ -208,15 +207,6 @@ export function TreeNode({
                 >
                   Reply
                 </button>
-                {node.parent_id !== null && (
-                  <button
-                    onClick={() => setComposerMode("sibling")}
-                    className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600
-                               hover:bg-gray-200"
-                  >
-                    Add alternative
-                  </button>
-                )}
                 {isOwn && (
                   <button
                     onClick={() => setEditing(true)}
@@ -240,14 +230,14 @@ export function TreeNode({
         {composerMode && (
           <form onSubmit={handleComposerSubmit} className="mt-2 rounded-md border border-blue-200 bg-blue-50/30 p-2">
             <p className="mb-1 text-xs font-medium text-blue-700">
-              {composerMode === "reply" ? "Reply" : "Add alternative"}
+              Reply
             </p>
             <HighlightTextarea
               value={composerBody}
               onChange={(e) => setComposerBody(e.target.value)}
               rows={2}
               autoFocus
-              placeholder={composerMode === "reply" ? "Write a reply..." : "Write an alternative..."}
+              placeholder="Write a reply..."
               labelToId={labelToId}
               messagesById={messagesById}
               profiles={profileMap}

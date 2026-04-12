@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -25,7 +25,7 @@ interface BranchViewProps {
 
 interface ComposerState {
   parentId: string | null;
-  mode: "reply" | "sibling";
+  mode: "reply";
 }
 
 export function BranchView({
@@ -42,9 +42,9 @@ export function BranchView({
     null
   );
 
-  const profileMap = new Map(Object.entries(profiles));
-  const messagesById = new Map(messages.map((m) => [m.id, m]));
-  const { idToLabel, labelToId } = buildNodeLabelMaps(messages);
+  const profileMap = useMemo(() => new Map(Object.entries(profiles)), [profiles]);
+  const messagesById = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
+  const { idToLabel, labelToId } = useMemo(() => buildNodeLabelMaps(messages), [messages]);
 
   // Subscribe to realtime message inserts and updates
   useEffect(() => {
@@ -113,10 +113,6 @@ export function BranchView({
 
   function handleReplyAsChild(messageId: string) {
     setComposerState({ parentId: messageId, mode: "reply" });
-  }
-
-  function handleAddSibling(parentId: string | null) {
-    setComposerState({ parentId, mode: "sibling" });
   }
 
   function handleSiblingSwitch(siblingId: string) {
@@ -190,7 +186,6 @@ export function BranchView({
                 siblingContext={siblingCtx}
                 onFocus={navigateToNode}
                 onReplyAsChild={handleReplyAsChild}
-                onAddSibling={handleAddSibling}
                 parentId={msg.parent_id}
                 onSiblingSwitch={handleSiblingSwitch}
                 onMessageUpdated={handleMessageUpdated}
@@ -214,23 +209,6 @@ export function BranchView({
                   </div>
                 )}
 
-              {composerState &&
-                composerState.parentId === msg.parent_id &&
-                composerState.mode === "sibling" &&
-                msg.id === focusedNodeId && (
-                  <div style={{ marginLeft: depth * 16 }} className="mt-2">
-                    <Composer
-                      conversationId={conversationId}
-                      parentId={msg.parent_id}
-                      mode="sibling"
-                      labelToId={labelToId}
-                      messagesById={messagesById}
-                      profileMap={profileMap}
-                      onClose={() => setComposerState(null)}
-                      onSent={handleComposerSent}
-                    />
-                  </div>
-                )}
             </div>
           );
         })}

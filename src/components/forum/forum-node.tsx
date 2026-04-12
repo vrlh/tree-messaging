@@ -38,7 +38,7 @@ export function ForumNode({
   const [editBody, setEditBody] = useState(node.body);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [composerMode, setComposerMode] = useState<"reply" | "sibling" | null>(null);
+  const [composerMode, setComposerMode] = useState<"reply" | null>(null);
   const [composerBody, setComposerBody] = useState("");
   const [composerSending, setComposerSending] = useState(false);
   const [composerError, setComposerError] = useState("");
@@ -77,7 +77,7 @@ export function ForumNode({
     if (!composerBody.trim()) return;
     setComposerSending(true);
     setComposerError("");
-    const parentId = composerMode === "reply" ? node.id : node.parent_id;
+    const parentId = node.id;
     const result = await createMessage({
       conversation_id: conversationId,
       parent_id: parentId,
@@ -105,8 +105,8 @@ export function ForumNode({
         )}
 
         <div className="min-w-0 flex-1">
-          {/* Header row */}
-          <div className="flex items-center gap-2 text-xs">
+          {/* Header row with focus/tree links inline */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className={`font-medium ${isOwn ? "text-blue-600" : "text-gray-700"}`}>
               {senderName}
             </span>
@@ -119,14 +119,9 @@ export function ForumNode({
                 {nodeLabel}
               </span>
             )}
-            {node.child_count > 0 && (
-              <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                [{collapsed ? "+" : "-"}] {node.child_count} {node.child_count === 1 ? "reply" : "replies"}
-              </button>
-            )}
+            <span className="text-gray-300">|</span>
+            <Link href={`/conversation/${conversationId}?node=${node.id}&mode=focus`} className="text-gray-400 hover:text-gray-600">focus</Link>
+            <Link href={`/conversation/${conversationId}?node=${node.id}&mode=tree`} className="text-gray-400 hover:text-gray-600">tree</Link>
           </div>
 
           {/* Body */}
@@ -163,18 +158,24 @@ export function ForumNode({
             </div>
           )}
 
-          {/* Actions */}
+          {/* Actions row */}
           {!editing && (
-            <div className="mt-1 flex items-center gap-3 text-xs text-gray-400">
+            <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-400">
               <button onClick={() => setComposerMode("reply")} className="hover:text-gray-600">reply</button>
-              {node.parent_id !== null && (
-                <button onClick={() => setComposerMode("sibling")} className="hover:text-gray-600">alternative</button>
-              )}
               {isOwn && (
                 <button onClick={() => setEditing(true)} className="hover:text-gray-600">edit</button>
               )}
-              <Link href={`/conversation/${conversationId}?node=${node.id}&mode=focus`} className="hover:text-gray-600">focus</Link>
-              <Link href={`/conversation/${conversationId}?node=${node.id}&mode=tree`} className="hover:text-gray-600">tree</Link>
+              {node.child_count > 0 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="hover:text-gray-600"
+                  >
+                    [{collapsed ? "+" : "-"}] {node.child_count} {node.child_count === 1 ? "reply" : "replies"}
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -182,14 +183,14 @@ export function ForumNode({
           {composerMode && (
             <form onSubmit={handleComposerSubmit} className="mt-2 rounded-md border border-blue-200 bg-blue-50/30 p-2">
               <p className="mb-1 text-xs font-medium text-blue-700">
-                {composerMode === "reply" ? "Reply" : "Add alternative"}
+                Reply
               </p>
               <HighlightTextarea
                 value={composerBody}
                 onChange={(e) => setComposerBody(e.target.value)}
                 rows={2}
                 autoFocus
-                placeholder={composerMode === "reply" ? "Write a reply..." : "Write an alternative..."}
+                placeholder="Write a reply..."
                 labelToId={labelToId}
                 messagesById={messagesById}
                 profiles={profileMap}

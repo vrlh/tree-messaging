@@ -8,7 +8,7 @@ import { HighlightTextarea } from "@/components/highlight-textarea";
 interface ComposerProps {
   conversationId: string;
   parentId: string | null;
-  mode: "reply" | "sibling";
+  mode: "reply";
   labelToId?: Map<string, string>;
   messagesById?: Map<string, DbMessage>;
   profileMap?: Map<string, { email: string; display_name: string | null }>;
@@ -30,7 +30,7 @@ export function Composer({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
-  const label = mode === "reply" ? "Reply" : "Add alternative";
+  const label = "Reply";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +65,7 @@ export function Composer({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder={
-          mode === "reply" ? "Write a reply..." : "Write an alternative..."
+          "Write a reply..."
         }
         rows={3}
         autoFocus

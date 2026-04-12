@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { buildTree } from "@/lib/tree-utils";
 import { buildNodeLabelMaps } from "@/lib/node-numbers";
@@ -23,7 +23,7 @@ export function ForumView({
   profiles,
 }: ForumViewProps) {
   const [messages, setMessages] = useState<DbMessage[]>(initialMessages);
-  const profileMap = new Map(Object.entries(profiles));
+  const profileMap = useMemo(() => new Map(Object.entries(profiles)), [profiles]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -67,9 +67,9 @@ export function ForumView({
     };
   }, [conversationId]);
 
-  const tree = buildTree(messages, profileMap);
-  const { idToLabel, labelToId } = buildNodeLabelMaps(messages);
-  const messagesById = new Map(messages.map((m) => [m.id, m]));
+  const tree = useMemo(() => buildTree(messages, profileMap), [messages, profileMap]);
+  const { idToLabel, labelToId } = useMemo(() => buildNodeLabelMaps(messages), [messages]);
+  const messagesById = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
 
   function findNode(nodes: MessageNode[], id: string): MessageNode | null {
     for (const n of nodes) {
