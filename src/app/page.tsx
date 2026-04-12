@@ -95,12 +95,15 @@ export default async function OverviewPage() {
             {conversation?.title ?? "Conversation"}
           </p>
         </div>
-        <a
-          href="/auth/signout"
-          className="text-xs text-gray-400 hover:text-gray-600"
-        >
-          Sign out
-        </a>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-500">{user.email}</span>
+          <a
+            href="/auth/signout"
+            className="text-xs text-gray-400 hover:text-gray-600"
+          >
+            Sign out
+          </a>
+        </div>
       </header>
 
       <RootList

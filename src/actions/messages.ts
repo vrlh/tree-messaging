@@ -48,3 +48,34 @@ export async function createMessage(
 
   return { success: true, message };
 }
+
+export async function updateMessage(
+  messageId: string,
+  body: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const { data: message, error } = await supabase
+    .from("messages")
+    .update({ body, edited: true })
+    .eq("id", messageId)
+    .eq("sender_id", user.id)
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/");
+
+  return { success: true, message };
+}

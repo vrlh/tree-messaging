@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { createMessage } from "@/actions/messages";
+import type { DbMessage } from "@/lib/types";
 
 interface ComposerProps {
   conversationId: string;
   parentId: string | null;
   mode: "reply" | "sibling";
   onClose: () => void;
-  onSent: () => void;
+  onSent: (message: DbMessage) => void;
 }
 
 export function Composer({
@@ -39,10 +40,10 @@ export function Composer({
 
     setSending(false);
 
-    if (result.success) {
+    if (result.success && result.message) {
       setBody("");
-      onSent();
-    } else {
+      onSent(result.message);
+    } else if (!result.success) {
       setError(result.error ?? "Failed to send");
     }
   }

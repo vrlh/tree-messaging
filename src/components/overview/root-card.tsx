@@ -38,14 +38,24 @@ export function RootCard({
               {topic.message.body}
             </p>
           </div>
-          <Link
-            href={`/conversation/${conversationId}?node=${topic.message.id}`}
-            className="shrink-0 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
-                       text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2
-                       focus:ring-gray-400/30"
-          >
-            Focus
-          </Link>
+          <div className="flex shrink-0 gap-1.5">
+            <Link
+              href={`/conversation/${conversationId}?node=${topic.message.id}&mode=focus`}
+              className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
+                         text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2
+                         focus:ring-gray-400/30"
+            >
+              Focus
+            </Link>
+            <Link
+              href={`/conversation/${conversationId}?node=${topic.message.id}&mode=tree`}
+              className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
+                         text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2
+                         focus:ring-gray-400/30"
+            >
+              Tree
+            </Link>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -88,22 +98,42 @@ export function RootCard({
                 });
 
                 return (
-                  <Link
+                  <div
                     key={child.id}
-                    href={`/conversation/${conversationId}?node=${child.id}`}
-                    className="block rounded-md border border-gray-100 bg-gray-50 p-3
+                    className="flex items-start gap-2 rounded-md border border-gray-100 bg-gray-50 p-3
                                hover:border-gray-200 hover:bg-gray-100 transition-colors"
                   >
-                    <p className="text-sm text-gray-800 line-clamp-2">
-                      {child.body}
-                    </p>
-                    <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500">
-                      <span className="font-medium text-gray-600">
-                        {childName}
-                      </span>
-                      <span>{childTime}</span>
+                    <Link
+                      href={`/conversation/${conversationId}?node=${child.id}&mode=focus`}
+                      className="min-w-0 flex-1"
+                    >
+                      <p className="text-sm text-gray-800 line-clamp-2">
+                        {child.body}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500">
+                        <span className="font-medium text-gray-600">
+                          {childName}
+                        </span>
+                        <span>{childTime}</span>
+                      </div>
+                    </Link>
+                    <div className="flex shrink-0 gap-1.5">
+                      <Link
+                        href={`/conversation/${conversationId}?node=${child.id}&mode=focus`}
+                        className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium
+                                   text-gray-600 hover:bg-gray-200"
+                      >
+                        Focus
+                      </Link>
+                      <Link
+                        href={`/conversation/${conversationId}?node=${child.id}&mode=tree`}
+                        className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium
+                                   text-gray-600 hover:bg-gray-200"
+                      >
+                        Tree
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>

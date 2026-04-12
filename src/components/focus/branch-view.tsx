@@ -10,6 +10,7 @@ import {
   countDescendants,
 } from "@/lib/tree-utils";
 import type { DbMessage, AncestorNode, SiblingContext } from "@/lib/types";
+import { buildNodeLabelMaps } from "@/lib/node-numbers";
 import { MessageCard } from "./message-card";
 import { AncestorChain } from "./ancestor-chain";
 import { Composer } from "./composer";
@@ -18,6 +19,7 @@ interface BranchViewProps {
   conversationId: string;
   initialMessages: DbMessage[];
   initialNodeId: string;
+  currentUserId: string;
   profiles: Record<string, { email: string; display_name: string | null }>;
 }
 
@@ -30,6 +32,7 @@ export function BranchView({
   conversationId,
   initialMessages,
   initialNodeId,
+  currentUserId,
   profiles,
 }: BranchViewProps) {
   const router = useRouter();
@@ -41,8 +44,9 @@ export function BranchView({
 
   const profileMap = new Map(Object.entries(profiles));
   const messagesById = new Map(messages.map((m) => [m.id, m]));
+  const { idToLabel, labelToId } = buildNodeLabelMaps(messages);
 
-  // Subscribe to realtime message inserts
+  // Subscribe to realtime message inserts and updates
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -63,6 +67,21 @@ export function BranchView({
           });
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as DbMessage;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? updated : m))
+          );
+        }
+      )
       .subscribe();
 
     return () => {
@@ -73,6 +92,13 @@ export function BranchView({
   // Compute view data from current state
   const ancestors = getAncestorChain(focusedNodeId, messagesById, profileMap);
   const branchPath = getDefaultBranchPath(focusedNodeId, messages);
+
+  // Build full path: ancestor messages (before focused) + branchPath (focused + down)
+  const ancestorMessages: DbMessage[] = ancestors
+    .slice(0, -1) // exclude the focused node itself (it's the first item in branchPath)
+    .map((a) => messagesById.get(a.id)!)
+    .filter(Boolean);
+  const fullPath = [...ancestorMessages, ...branchPath];
 
   const navigateToNode = useCallback(
     (nodeId: string) => {
@@ -97,8 +123,20 @@ export function BranchView({
     navigateToNode(siblingId);
   }
 
-  function handleComposerSent() {
+  function handleComposerSent(newMessage: DbMessage) {
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === newMessage.id)) return prev;
+      return [...prev, newMessage];
+    });
     setComposerState(null);
+    // Navigate to the new message so it becomes the visible branch
+    navigateToNode(newMessage.id);
+  }
+
+  function handleMessageUpdated(msgId: string, newBody: string) {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, body: newBody } : m))
+    );
   }
 
   return (
@@ -110,9 +148,9 @@ export function BranchView({
         onNavigate={navigateToNode}
       />
 
-      {/* Branch path: focused node + default path downward */}
+      {/* Full path: ancestors + focused node + default path downward */}
       <div className="space-y-3">
-        {branchPath.map((msg, i) => {
+        {fullPath.map((msg, i) => {
           const profile = profileMap.get(msg.sender_id);
           const senderName =
             profile?.display_name ?? profile?.email.split("@")[0] ?? "unknown";
@@ -122,6 +160,9 @@ export function BranchView({
             messages
           );
           const childCount = countDescendants(msg.id, messages);
+          const branchCount = messages.filter(
+            (m) => m.parent_id === msg.id
+          ).length;
 
           // Depth relative to the focused node
           const depth = i;
@@ -130,10 +171,20 @@ export function BranchView({
             <div key={msg.id}>
               <MessageCard
                 id={msg.id}
+                conversationId={conversationId}
                 body={msg.body}
                 senderName={senderName}
+                senderId={msg.sender_id}
+                currentUserId={currentUserId}
+                nodeLabel={idToLabel.get(msg.id) ?? ""}
+                labelToId={labelToId}
+                messagesById={messagesById}
+                profileMap={profileMap}
                 timestamp={msg.created_at}
+                updatedAt={msg.updated_at}
+                edited={msg.edited ?? false}
                 childCount={childCount}
+                branchCount={branchCount}
                 depth={depth}
                 isActive={isFocused}
                 siblingContext={siblingCtx}
@@ -142,6 +193,7 @@ export function BranchView({
                 onAddSibling={handleAddSibling}
                 parentId={msg.parent_id}
                 onSiblingSwitch={handleSiblingSwitch}
+                onMessageUpdated={handleMessageUpdated}
               />
 
               {/* Show composer after this message if targeted */}
@@ -179,14 +231,14 @@ export function BranchView({
       </div>
 
       {/* Leaf-level composer: offer reply at the bottom of the branch */}
-      {branchPath.length > 0 && !composerState && (
+      {fullPath.length > 0 && !composerState && (
         <div
-          style={{ marginLeft: Math.min(branchPath.length, 6) * 16 }}
+          style={{ marginLeft: Math.min(fullPath.length, 6) * 16 }}
           className="mt-3"
         >
           <button
             onClick={() =>
-              handleReplyAsChild(branchPath[branchPath.length - 1].id)
+              handleReplyAsChild(fullPath[fullPath.length - 1].id)
             }
             className="w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-2.5
                        text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700

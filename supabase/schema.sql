@@ -31,6 +31,7 @@ create table messages (
   parent_id uuid references messages(id) on delete cascade,
   sender_id uuid not null references profiles(id) on delete cascade,
   body text not null,
+  edited boolean not null default false,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null
 );
@@ -125,6 +126,13 @@ create policy "messages_select_member"
     )
   );
 
+-- Messages: sender can update their own messages
+create policy "messages_update_own"
+  on messages for update
+  to authenticated
+  using (sender_id = auth.uid())
+  with check (sender_id = auth.uid());
+
 -- Messages: members can insert messages (sender must be self)
 create policy "messages_insert_member"
   on messages for insert
@@ -142,4 +150,5 @@ create policy "messages_insert_member"
 -- Enable realtime for messages
 -- ============================================
 
+alter table messages replica identity full;
 alter publication supabase_realtime add table messages;

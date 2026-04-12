@@ -1,18 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BranchView } from "@/components/focus/branch-view";
+import { TreeView } from "@/components/tree/tree-view";
 import { APP_NAME } from "@/lib/constants";
 import type { DbMessage } from "@/lib/types";
 
-export default async function FocusPage({
+export default async function ConversationPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ node?: string }>;
+  searchParams: Promise<{ node?: string; mode?: string }>;
 }) {
   const { id: conversationId } = await params;
-  const { node: nodeId } = await searchParams;
+  const { node: nodeId, mode } = await searchParams;
+
+  const viewMode = mode === "tree" ? "tree" : "focus";
 
   const supabase = await createClient();
 
@@ -50,18 +53,10 @@ export default async function FocusPage({
 
   // Determine which node to focus on
   let focusNodeId = nodeId ?? null;
-  if (!focusNodeId && messages.length > 0) {
-    // Default to the first root message
+  // For focus mode, default to first root if no node specified
+  if (!focusNodeId && viewMode === "focus" && messages.length > 0) {
     const firstRoot = messages.find((m) => m.parent_id === null);
     focusNodeId = firstRoot?.id ?? messages[0].id;
-  }
-
-  if (!focusNodeId) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">No messages in this conversation.</p>
-      </div>
-    );
   }
 
   // Fetch profiles
@@ -74,6 +69,11 @@ export default async function FocusPage({
   for (const p of profileRows ?? []) {
     profiles[p.id] = { email: p.email, display_name: p.display_name };
   }
+
+  const otherMode = viewMode === "focus" ? "tree" : "focus";
+  const modeToggleHref = `/conversation/${conversationId}?${
+    focusNodeId ? `node=${focusNodeId}&` : ""
+  }mode=${otherMode}`;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -91,17 +91,41 @@ export default async function FocusPage({
             <h1 className="text-lg font-semibold text-gray-900">
               {conversation?.title ?? APP_NAME}
             </h1>
-            <p className="text-xs text-gray-500">Focus mode</p>
+            <p className="text-xs text-gray-500">
+              {viewMode === "focus" ? "Focus mode" : "Tree mode"}
+            </p>
           </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href={modeToggleHref}
+            className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
+                       text-gray-600 hover:bg-gray-200 focus:outline-none
+                       focus:ring-2 focus:ring-gray-400/30"
+          >
+            {viewMode === "focus" ? "Tree view" : "Focus view"}
+          </a>
+          <span className="text-xs text-gray-500">{user.email}</span>
         </div>
       </header>
 
-      <BranchView
-        conversationId={conversationId}
-        initialMessages={messages}
-        initialNodeId={focusNodeId}
-        profiles={profiles}
-      />
+      {viewMode === "focus" && focusNodeId ? (
+        <BranchView
+          conversationId={conversationId}
+          initialMessages={messages}
+          initialNodeId={focusNodeId}
+          currentUserId={user.id}
+          profiles={profiles}
+        />
+      ) : (
+        <TreeView
+          conversationId={conversationId}
+          initialMessages={messages}
+          currentUserId={user.id}
+          rootNodeId={focusNodeId}
+          profiles={profiles}
+        />
+      )}
     </div>
   );
 }

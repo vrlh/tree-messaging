@@ -26,6 +26,7 @@ export interface DbMessage {
   parent_id: string | null;
   sender_id: string;
   body: string;
+  edited: boolean;
   created_at: string;
   updated_at: string;
 }
