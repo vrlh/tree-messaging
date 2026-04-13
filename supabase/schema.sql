@@ -146,6 +146,18 @@ create policy "messages_insert_member"
     )
   );
 
+-- Messages: members can delete messages in their conversation
+create policy "messages_delete_member"
+  on messages for delete
+  to authenticated
+  using (
+    exists (
+      select 1 from conversation_members
+      where conversation_members.conversation_id = messages.conversation_id
+        and conversation_members.user_id = auth.uid()
+    )
+  );
+
 -- ============================================
 -- Enable realtime for messages
 -- ============================================

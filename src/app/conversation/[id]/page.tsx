@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { BranchView } from "@/components/focus/branch-view";
 import { TreeView } from "@/components/tree/tree-view";
 import { ForumView } from "@/components/forum/forum-view";
+import { OrganizeView } from "@/components/organize/organize-view";
 import { APP_NAME } from "@/lib/constants";
 import type { DbMessage } from "@/lib/types";
 
@@ -16,7 +17,7 @@ export default async function ConversationPage({
   const { id: conversationId } = await params;
   const { node: nodeId, mode } = await searchParams;
 
-  const viewMode = mode === "tree" ? "tree" : mode === "forum" ? "forum" : "focus";
+  const viewMode = mode === "tree" ? "tree" : mode === "forum" ? "forum" : mode === "organize" ? "organize" : "focus";
 
   const supabase = await createClient();
 
@@ -76,6 +77,7 @@ export default async function ConversationPage({
     focus: `/conversation/${conversationId}?${nodeParam}mode=focus`,
     tree: `/conversation/${conversationId}?${nodeParam}mode=tree`,
     forum: `/conversation/${conversationId}?${nodeParam}mode=forum`,
+    organize: `/conversation/${conversationId}?mode=organize`,
   };
 
   const containerClass = viewMode === "tree"
@@ -99,12 +101,12 @@ export default async function ConversationPage({
               {conversation?.title ?? APP_NAME}
             </h1>
             <p className="text-xs text-gray-500">
-              {viewMode === "focus" ? "Focus mode" : viewMode === "tree" ? "Tree mode" : "Forum mode"}
+              {viewMode === "focus" ? "Focus mode" : viewMode === "tree" ? "Tree mode" : viewMode === "forum" ? "Forum mode" : "Organize mode"}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {(["focus", "tree", "forum"] as const).map((m) => (
+          {(["focus", "tree", "forum", "organize"] as const).map((m) => (
             <a
               key={m}
               href={modeLinks[m]}
@@ -138,12 +140,19 @@ export default async function ConversationPage({
           rootNodeId={focusNodeId}
           profiles={profiles}
         />
-      ) : (
+      ) : viewMode === "forum" ? (
         <ForumView
           conversationId={conversationId}
           initialMessages={messages}
           currentUserId={user.id}
           rootNodeId={focusNodeId}
+          profiles={profiles}
+        />
+      ) : (
+        <OrganizeView
+          conversationId={conversationId}
+          initialMessages={messages}
+          currentUserId={user.id}
           profiles={profiles}
         />
       )}
