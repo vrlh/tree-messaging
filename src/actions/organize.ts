@@ -38,6 +38,26 @@ export async function makeRoot(messageId: string): Promise<ActionResult> {
   return setParent(messageId, null);
 }
 
+export async function editMessageAsOrganizer(
+  messageId: string,
+  body: string
+): Promise<ActionResult> {
+  const { user, supabase } = await getAuthenticatedUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  const { data: message, error } = await supabase
+    .from("messages")
+    .update({ body, edited: true })
+    .eq("id", messageId)
+    .select()
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/");
+  return { success: true, message };
+}
+
 export async function deleteMessage(messageId: string): Promise<ActionResult> {
   const { user, supabase } = await getAuthenticatedUser();
   if (!user) return { success: false, error: "Not authenticated" };

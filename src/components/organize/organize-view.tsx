@@ -5,11 +5,11 @@ import { createClient } from "@/lib/supabase/client";
 import { buildNodeLabelMaps } from "@/lib/node-numbers";
 import type { DbMessage } from "@/lib/types";
 import { OrganizeCard } from "./organize-card";
-import { updateMessage } from "@/actions/messages";
 import {
   setParent,
   makeRoot,
   deleteMessage,
+  editMessageAsOrganizer,
   combineMessages,
   splitMessage,
 } from "@/actions/organize";
@@ -118,7 +118,7 @@ export function OrganizeView({
 
   async function handleEdit(id: string, newBody: string) {
     setError("");
-    const result = await updateMessage(id, newBody);
+    const result = await editMessageAsOrganizer(id, newBody);
     if (!result.success) {
       setError(result.error ?? "Failed");
       return;
