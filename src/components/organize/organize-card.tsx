@@ -174,14 +174,13 @@ export function OrganizeCard({
       {!showSplit && (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
           {/* Selection actions */}
-          {!hasSelection && (
-            <button onClick={() => onSelect(message.id)} className="hover:text-gray-600">
-              select
-            </button>
-          )}
-          {isSelected && (
+          {isSelected ? (
             <button onClick={onClearSelection} className="text-blue-600 hover:text-blue-800">
               deselect
+            </button>
+          ) : (
+            <button onClick={() => onSelect(message.id)} className={hasSelection ? "text-blue-500 hover:text-blue-700" : "hover:text-gray-600"}>
+              {hasSelection ? "reselect" : "select"}
             </button>
           )}
           {hasSelection && !isSelected && selectedId && (
