@@ -52,37 +52,8 @@ export function OrganizeView({
     return map;
   }, [messages, idToLabel]);
 
-  // Realtime subscription
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`organize:${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        () => {
-          // Refetch all messages on any change
-          supabase
-            .from("messages")
-            .select("*")
-            .eq("conversation_id", conversationId)
-            .order("created_at", { ascending: true })
-            .then(({ data }) => {
-              if (data) setMessages(data);
-            });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [conversationId]);
+  // No realtime refetch in organize mode — local state is authoritative
+  // The server actions update the DB, and local state is updated optimistically
 
   // Filter messages
   const filtered = useMemo(() => {
