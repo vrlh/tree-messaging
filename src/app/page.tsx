@@ -96,6 +96,13 @@ export default async function OverviewPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <a
+            href={`/conversation/${conversationId}?mode=organize`}
+            className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium
+                       text-gray-600 hover:bg-gray-200"
+          >
+            Organize
+          </a>
           <span className="text-xs text-gray-500">{user.email}</span>
           <a
             href="/auth/signout"
