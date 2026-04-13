@@ -67,7 +67,6 @@ export async function updateMessage(
     .from("messages")
     .update({ body, edited: true })
     .eq("id", messageId)
-    .eq("sender_id", user.id)
     .select()
     .single();
 
