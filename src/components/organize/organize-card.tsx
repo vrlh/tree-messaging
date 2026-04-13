@@ -16,6 +16,7 @@ interface OrganizeCardProps {
   onClearSelection: () => void;
   onSetParent: (childId: string, parentId: string) => void;
   onMakeRoot: (id: string) => void;
+  onDelete: (id: string) => void;
   onCombineWithNext: (id: string) => void;
   onSplit: (id: string, splitIndex: number) => void;
 }
@@ -33,6 +34,7 @@ export function OrganizeCard({
   onClearSelection,
   onSetParent,
   onMakeRoot,
+  onDelete,
   onCombineWithNext,
   onSplit,
 }: OrganizeCardProps) {
@@ -183,12 +185,20 @@ export function OrganizeCard({
             </button>
           )}
           {hasSelection && !isSelected && selectedId && (
-            <button
-              onClick={() => onSetParent(selectedId, message.id)}
-              className="text-green-600 hover:text-green-800"
-            >
-              ← make parent of selected
-            </button>
+            <>
+              <button
+                onClick={() => onSetParent(selectedId, message.id)}
+                className="text-green-600 hover:text-green-800"
+              >
+                ← set as parent of selected
+              </button>
+              <button
+                onClick={() => onSetParent(message.id, selectedId)}
+                className="text-purple-600 hover:text-purple-800"
+              >
+                → set as child of selected
+              </button>
+            </>
           )}
 
           <span className="text-gray-300">|</span>
@@ -207,6 +217,10 @@ export function OrganizeCard({
               split
             </button>
           )}
+          <span className="text-gray-300">|</span>
+          <button onClick={() => onDelete(message.id)} className="text-red-400 hover:text-red-600">
+            delete
+          </button>
         </div>
       )}
     </div>

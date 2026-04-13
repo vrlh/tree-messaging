@@ -38,6 +38,37 @@ export async function makeRoot(messageId: string): Promise<ActionResult> {
   return setParent(messageId, null);
 }
 
+export async function deleteMessage(messageId: string): Promise<ActionResult> {
+  const { user, supabase } = await getAuthenticatedUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  // Re-parent any children to this message's parent
+  const { data: msg } = await supabase
+    .from("messages")
+    .select("parent_id")
+    .eq("id", messageId)
+    .single();
+
+  if (!msg) return { success: false, error: "Message not found" };
+
+  const { error: reparentError } = await supabase
+    .from("messages")
+    .update({ parent_id: msg.parent_id })
+    .eq("parent_id", messageId);
+
+  if (reparentError) return { success: false, error: reparentError.message };
+
+  const { error } = await supabase
+    .from("messages")
+    .delete()
+    .eq("id", messageId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/");
+  return { success: true };
+}
+
 export async function combineMessages(
   keepId: string,
   mergeId: string

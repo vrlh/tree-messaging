@@ -8,6 +8,7 @@ import { OrganizeCard } from "./organize-card";
 import {
   setParent,
   makeRoot,
+  deleteMessage,
   combineMessages,
   splitMessage,
 } from "@/actions/organize";
@@ -127,6 +128,22 @@ export function OrganizeView({
     );
   }
 
+  async function handleDelete(id: string) {
+    setError("");
+    const result = await deleteMessage(id);
+    if (!result.success) {
+      setError(result.error ?? "Failed");
+      return;
+    }
+    setMessages((prev) => {
+      const msg = prev.find((m) => m.id === id);
+      return prev
+        .filter((m) => m.id !== id)
+        .map((m) => m.parent_id === id ? { ...m, parent_id: msg?.parent_id ?? null } : m);
+    });
+    if (selectedId === id) setSelectedId(null);
+  }
+
   async function handleCombineWithNext(id: string) {
     setError("");
     const sorted = [...messages].sort((a, b) =>
@@ -236,6 +253,7 @@ export function OrganizeView({
               onClearSelection={() => setSelectedId(null)}
               onSetParent={handleSetParent}
               onMakeRoot={handleMakeRoot}
+              onDelete={handleDelete}
               onCombineWithNext={handleCombineWithNext}
               onSplit={handleSplit}
             />
