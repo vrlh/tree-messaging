@@ -126,11 +126,17 @@ create policy "messages_select_member"
     )
   );
 
--- Messages: sender can update their own messages
-create policy "messages_update_own"
+-- Messages: conversation members can update messages (for organizing tree structure)
+create policy "messages_update_member"
   on messages for update
   to authenticated
-  using (sender_id = auth.uid())
+  using (
+    exists (
+      select 1 from conversation_members
+      where conversation_members.conversation_id = messages.conversation_id
+        and conversation_members.user_id = auth.uid()
+    )
+  )
   with check (sender_id = auth.uid());
 
 -- Messages: members can insert messages (sender must be self)

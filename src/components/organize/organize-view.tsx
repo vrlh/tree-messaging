@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { buildNodeLabelMaps } from "@/lib/node-numbers";
 import type { DbMessage } from "@/lib/types";
 import { OrganizeCard } from "./organize-card";
+import { updateMessage } from "@/actions/messages";
 import {
   setParent,
   makeRoot,
@@ -113,6 +114,18 @@ export function OrganizeView({
         .map((m) => m.parent_id === id ? { ...m, parent_id: msg?.parent_id ?? null } : m);
     });
     if (selectedId === id) setSelectedId(null);
+  }
+
+  async function handleEdit(id: string, newBody: string) {
+    setError("");
+    const result = await updateMessage(id, newBody);
+    if (!result.success) {
+      setError(result.error ?? "Failed");
+      return;
+    }
+    setMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, body: newBody } : m))
+    );
   }
 
   async function handleCombineWithNext(id: string) {
@@ -225,6 +238,7 @@ export function OrganizeView({
               onSetParent={handleSetParent}
               onMakeRoot={handleMakeRoot}
               onDelete={handleDelete}
+              onEdit={handleEdit}
               onCombineWithNext={handleCombineWithNext}
               onSplit={handleSplit}
             />

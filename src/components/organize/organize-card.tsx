@@ -18,6 +18,7 @@ interface OrganizeCardProps {
   onMakeRoot: (id: string) => void;
   onDelete: (id: string) => void;
   onCombineWithNext: (id: string) => void;
+  onEdit: (id: string, newBody: string) => void;
   onSplit: (id: string, splitIndex: number) => void;
 }
 
@@ -35,11 +36,14 @@ export function OrganizeCard({
   onSetParent,
   onMakeRoot,
   onDelete,
+  onEdit,
   onCombineWithNext,
   onSplit,
 }: OrganizeCardProps) {
   const [showSplit, setShowSplit] = useState(false);
   const [splitPos, setSplitPos] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [editBody, setEditBody] = useState(message.body);
 
   const time = new Date(message.created_at).toLocaleDateString("en-US", {
     month: "short",
@@ -163,6 +167,42 @@ export function OrganizeCard({
               )}
             </div>
           </div>
+        ) : editing ? (
+          <div className="space-y-2">
+            <textarea
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+              rows={4}
+              autoFocus
+              className="w-full resize-none rounded-md border border-gray-200 px-3 py-2 text-sm
+                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  onEdit(message.id, editBody.trim());
+                  setEditing(false);
+                }
+                if (e.key === "Escape") {
+                  setEditing(false);
+                  setEditBody(message.body);
+                }
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setEditing(false); setEditBody(message.body); }}
+                className="rounded-md px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { onEdit(message.id, editBody.trim()); setEditing(false); }}
+                className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-gray-800"
+              >
+                Save
+              </button>
+            </div>
+          </div>
         ) : (
           <p className="text-sm leading-relaxed text-gray-900 whitespace-pre-wrap">
             {message.body}
@@ -216,6 +256,9 @@ export function OrganizeCard({
               split
             </button>
           )}
+          <button onClick={() => { setEditing(true); setEditBody(message.body); }} className="hover:text-gray-600">
+            edit
+          </button>
           <span className="text-gray-300">|</span>
           <button onClick={() => onDelete(message.id)} className="text-red-400 hover:text-red-600">
             delete
