@@ -251,7 +251,7 @@ export function OrganizeCard({
           <button onClick={() => onCombineWithNext(message.id)} className="hover:text-gray-600">
             combine with next
           </button>
-          {message.body.includes("\n") && (
+          {message.body.length > 20 && (
             <button onClick={() => setShowSplit(true)} className="hover:text-gray-600">
               split
             </button>

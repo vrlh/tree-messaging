@@ -144,8 +144,7 @@ create policy "messages_insert_member"
   on messages for insert
   to authenticated
   with check (
-    sender_id = auth.uid()
-    and exists (
+    exists (
       select 1 from conversation_members
       where conversation_members.conversation_id = messages.conversation_id
         and conversation_members.user_id = auth.uid()
